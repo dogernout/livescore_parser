@@ -1,0 +1,13 @@
+/venv
+/*.xlsm
+/test.py
+/test2.py
+/.idea
+/__pycache__
+/drivers/*
+/data/*
+*.xlsb
+gui_livescore.py
+gui_for_last_day.py
+abobka.txt
+livescore_parser.py
