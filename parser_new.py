@@ -85,13 +85,14 @@ class Parser:
                 for _ in range(3): body.send_keys(Keys.ARROW_DOWN)
                 parse_odd_tab(counter+1)
             except ElementNotInteractableException:  # FIX THIS SHEEEIDT
-                print("ABOBA HAPPENED")
+                print("exception: ElementNotInteractableException", flush=True)
                 parse_odd_tab(counter+1)
             else:
-                print(f"Processed: {colored(str(int(i / len(l_all_home_teams) * 100)) + '%', 'yellow')}")
+                #print(f"Processed: {colored(str(int(i / len(l_all_home_teams) * 100)) + '%', 'yellow')}")
+                pass
             sleep(1)
             if len(self.driver.window_handles) == 1:
-                print("Strange thing..")
+                print("strange thing..", flush=True)
                 parse_odd_tab(counter+1)
             coefficients_tab = self.driver.window_handles[1]
             self.driver.switch_to.window(coefficients_tab)
@@ -99,18 +100,18 @@ class Parser:
             current_teams_table = self.driver.find_element(By.CLASS_NAME, 'container__detail')
             l_current_teams_coeffs = current_teams_table.find_elements(By.CLASS_NAME, 'oddsValueInner')
             l_current_teams_coeffs = [[['1', 'X', '2'][n], l_current_teams_coeffs[n].get_attribute("textContent")]
-                                    for n in range(len(l_current_teams_coeffs))]
+                                      for n in range(len(l_current_teams_coeffs))]
             s_status = self.driver.find_element(By.CLASS_NAME, 'detailScore__status').text
             if not self.check_coefficients(l_current_teams_coeffs):
                 #print(f"{colored('Skipping', 'red')} {team1_name} VS {team2_name} match because of odds issues..")
-                print(f"skipping {team1_name} VS {team2_name} match because of odds issues..")
+                print(f"skipping {team1_name} VS {team2_name} match because of odds issues..", flush=True)
                 self.driver.close()
                 self.driver.switch_to.window(main_tab)
                 return None, None, None, None
             if 'TKP' in s_status or 'Отменен' in s_status or 'Перенесен' in s_status:
-                #print(
-                #    f"{colored('Skipping', 'red')} {team1_name} VS {team2_name} match because of ТКР/Отменен/Перенесен")
-                print(f"skipping {team1_name} VS {team2_name} match because of ТКР/Отменен/Перенесен..")
+                #  print(
+                #   f"{colored('Skipping', 'red')} {team1_name} VS {team2_name} match because of ТКР/Отменен/Перенесен")
+                print(f"skipping {team1_name} VS {team2_name} match because of ТКР/Отменен/Перенесен..", flush=True)
                 self.driver.close()
                 self.driver.switch_to.window(main_tab)
                 return None, None, None, None
@@ -151,22 +152,22 @@ class Parser:
         l_all_home_teams = self.driver.find_elements(By.CSS_SELECTOR, '.event__participant--home')
         l_all_away_teams = self.driver.find_elements(By.CSS_SELECTOR, '.event__participant--away')
         main_tab = self.driver.window_handles[0]
-        print(f'all_len {len(l_all_home_teams)}')
+        print(f'all_len {len(l_all_home_teams)}')#, flush=True)
         i = 0
-        #while i < len(l_all_home_teams):
-        while i < 3:
+        while i < len(l_all_home_teams):
+        #while i < 3:
             l_info = []
-            print(f'current {i}')
+            print(f'current {i}')#, flush=True)
             status = int(i / len(l_all_home_teams) * 100)
             try:
                 team1_name = l_all_home_teams[i].text
                 team2_name = l_all_away_teams[i].text
             except Exception as e:
-                print(f"Exception in opening coefficients tab. Index: {i}. Description: {e}")
+                print(f"exception in opening coefficients tab. Index: {i}. Description: {e}")#, flush=True)
                 continue
             if '(Ж)' in team1_name or '(Ж)' in team2_name:
                 #print(f"{colored('Skipping', 'red')} {team1_name} VS {team2_name} match because of female teams..")
-                print(f"skipping {team1_name} VS {team2_name} match because of female teams..")
+                print(f"skipping {team1_name} VS {team2_name} match because of female teams..")#, flush=True)
                 i += 1
                 continue
             s_country, s_status, l_current_teams_coeffs, l_cur_teams = parse_odd_tab()
@@ -182,13 +183,15 @@ class Parser:
                 self.write_excel(l_info[0], l_info[2], 1)
 #                print(f"{colored('writing', 'green')} info about {team1_name} VS {team2_name} match")
                 print(f"writing info about {team1_name} VS {team2_name} match")
+                #sys.stdout.write(f"222writing info about {team1_name} VS {team2_name} match")
             else:
 #                print(f"{colored('skipping', 'red')} {team1_name} VS {team2_name} match because of not "
 #                      f"enough matches (< 10)..")
-                print(f"skipping {team1_name} VS {team2_name} match because of not enough matches (<10)..")
+                print(f"skipping {team1_name} VS {team2_name} match because of not enough matches (<10)..")#, flush=True)
             i += 1
         self.driver.quit()
-        print(f"{colored('All done!', 'green')}")
+        #print(f"{colored('All done!', 'green')}")
+        print('all done')#, flush=True)
 
     def open_workbook(self):
         excel_path = os.getcwd() + r'\templates\Шаблон_матчей.xlsm'
@@ -225,7 +228,7 @@ class Parser:
         self.wb.SaveAs(os.getcwd() + rf'\data\{s_date}.xlsm')
         self.wb.Close()
         self.xl.Quit()
-        print('end')
+        print('end', flush=True)
 
 
 if __name__ == '__main__':

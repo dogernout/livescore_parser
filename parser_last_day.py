@@ -66,18 +66,21 @@ def get_data_last_day(days=1):
         dict_res = dict()
         if len(list_home_teams) == len(list_away_teams) == len(list_home_res) == len(list_away_res):
             print('OK!')
+            print(f'all_len {len(list_home_teams)}')
             for i in range(len(list_home_teams)):
+                print(f'current {i}')
                 dict_res[list_home_teams[i].text] = [list_away_teams[i].text,
                                                      list_home_res[i].text,
                                                      list_away_res[i].text]
                 #print(list_home_teams[i].text, list_away_teams[i].text, list_home_res[i].text, list_away_res[i].text)
                 #print('-' * 100)
+            driver.quit()
         else:
             print('NOT OK!')
             raise SystemError("Количество домашних команд не равно количеству команд противника")
         return dict_res
-    finally:
-        driver.quit()
+    #finally:
+    #    driver.quit()
 
 
 def write_data_excel(path, day=1):

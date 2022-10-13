@@ -6,6 +6,7 @@ import subprocess
 import parser_new
 import parser_last_day
 import os
+import threading
 
 
 def show_window():
@@ -47,49 +48,68 @@ def show_window():
             vsb.pack(side=RIGHT, fill=BOTH)
             lbx_status.config(yscrollcommand=vsb.set)
             window.update()
-            process = subprocess.Popen(f"parser_new.py {ivar_date.get() + 1} {ivar_settings.get()}", shell=True,
-                                       stdout=subprocess.PIPE)
+            process = subprocess.Popen(f"py -u parser_new.py {ivar_date.get() + 1} {ivar_settings.get()}", shell=True,
+                                       stdout=subprocess.PIPE, universal_newlines=True)
             while True:
-                output = process.stdout.readline().strip().decode(encoding='utf-8')
+                try:
+                    output = process.stdout.readline().strip()
+                except Exception as e:
+                    print('exception:', e)
+                    output = ' '
                 if process.poll() is not None: break
                 if 'all_len' in output:
                     i_len = int(output.split()[1])
                 if 'current' in output:
                     i_current = int(output.split()[1])
-                    prg_bar['value'] = 610 * i_current // i_len
-                    lbl_percent.config(text=str(round(610 * i_current / i_len, 2)) + '%')
+                    prg_bar['value'] = round((610 * i_current / i_len) / 610 * 100, 2)
+                    lbl_percent.config(text=str(round((610 * i_current / i_len) / 610 * 100, 2)) + '%')
                     window.update()
                 if 'writing' in output or 'skipping' in output:
                     lbx_status.insert(0, output)
                     window.update()
                 window.update()
             lbl_percent.config(text='All Done')
+            prg_bar['value'] = 100
             window.update()
         else:
             s_filename = filedialog.askopenfilename(initialdir=os.getcwd(), title='Choose file to upload',
                                                     filetypes=(('excel files', '*.xls*'),))
             print(s_filename, len(s_filename), f"date - {ivar_date.get() + 1}", sep='\n')
             if not len(s_filename): return
-            process = subprocess.Popen(f"parser_last_day.py {s_filename} {ivar_date.get() + 1}", shell=True,
-                                       stdout=subprocess.PIPE)
             fr_modes.pack_forget()
             fr_mode0.pack_forget()
             fr_mode1.pack_forget()
             fr_run = Frame(window, borderwidth=0)
             fr_run.pack(side=TOP, fill=BOTH, expand=TRUE)
-            prg_bar = ttk.Progressbar(fr_run, orient=HORIZONTAL, length=610, mode='indeterminate')
+            prg_bar = ttk.Progressbar(fr_run, orient=HORIZONTAL, length=610, mode='determinate')
             prg_bar.grid(row=1, column=0, columnspan=2, sticky=NSEW, padx=(16, 16))
+            prg_bar['value'] = 0
             prg_bar.start(interval=32)
             lbl_status = Label(fr_run, text='Work In Progress', font=('arial', 14))
             lbl_status.grid(row=0, column=0, sticky=EW, columnspan=2)
             window.update()
+            process = subprocess.Popen(f"parser_last_day.py {s_filename} {ivar_date.get() + 1}", shell=True,
+                                       stdout=subprocess.PIPE, universal_newlines=True)
             while True:
-                output = process.stdout.readline().strip().decode(encoding='utf-8')
+                try:
+                    output = process.stdout.readline().strip()
+                except Exception as e:
+                    print('exception:', e)
+                    output = ' '
                 if process.poll() is not None: break
-                window.update()
+                if 'all_len' in output:
+                    print(output)
+                    prg_bar['value'] = 2
+                    window.update()
+                if 'current' in output:
+                    print(output)
+                    prg_bar['value'] = 10
+                    window.update()
+                print(output)
 
             lbl_status.config(text='All Done')
             window.update()
+
 
     def btn_upload_clicked(event=None):
         s_filename = filedialog.askopenfilename(initialdir=os.getcwd(), title='Choose file to upload',
