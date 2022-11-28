@@ -124,6 +124,7 @@ class Parser:
         def parse_scores_tab(sel_tab, team):
 
             def check_scores():
+                print(l_home_scores, l_away_scores, l_results, sep="\n")
                 if len(l_home_scores) != 10 or len(l_away_scores) != 10 or len(l_results) != 10: return False
                 for ind in range(10):
                     if not l_home_scores[ind].isdigit() or not l_away_scores[ind].isdigit(): return False
@@ -136,7 +137,8 @@ class Parser:
                              if m.text != '-']
             l_away_scores = [m.text for m in self.driver.find_elements(By.CSS_SELECTOR, '.event__score--away')
                              if m.text != '-']
-            l_results = [m.text for m in self.driver.find_elements(By.CLASS_NAME, 'wld') if m.text in 'ВНП']
+            #l_results = [m.text for m in self.driver.find_elements(By.CLASS_NAME, 'wld') if m.text in 'ВНП']
+            l_results = [m.text for m in self.driver.find_elements(By.CLASS_NAME, 'formIcon') if m.text in 'ВНП']
             self.driver.close()
             self.driver.switch_to.window(main_tab)
             if check_scores(): return s_name, l_home_scores, l_away_scores, l_results
