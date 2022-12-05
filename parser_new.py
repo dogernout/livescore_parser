@@ -28,8 +28,9 @@ class Parser:
         self.date_counter = date_to_parse
         self.xl, self.wb, self.sheet = None, None, None
         self.df = pd.DataFrame(columns=['country', 'coef_W', 'coef_D', 'coef_L', 'team1', 'stat_home1', 'stat_away1',
-                          'res_team1', 'team2', 'stat_home2', 'stat_away2', 'res_team2', 'res_home',
-                          'res_away', 'stat_res'])
+                                        'res_team1', 'team2', 'stat_home2', 'stat_away2', 'res_team2', 'res_home',
+                                        'res_away', 'stat_res'])
+        self.get_path()
 
     @staticmethod
     def get_driver(headless):
@@ -51,6 +52,10 @@ class Parser:
                 service=ChromeService(ChromeDriverManager(path=os.getcwd() + r'\drivers').install()),
                 options=options)
         return driver
+
+    @staticmethod
+    def get_path():
+        if not os.path.exists(r'result'): os.mkdir(r'result')
 
     @staticmethod
     def check_coefficients(l_current_teams_coeffs):
@@ -200,8 +205,9 @@ class Parser:
 
     def quitter(self):
         self.driver.quit()
-        self.df.to_csv('aboba_test.csv', encoding='utf-8')
-        self.df.to_csv('amogus_test.csv', encoding='utf-8', sep='\t')
+        s_date = datetime.strftime(datetime.today().date() + timedelta(days=self.date_counter), format="%d-%m-%Y")
+        if os.path.exists(rf'result\{s_date}.csv'): os.remove(rf'result\{s_date}.csv')
+        self.df.to_csv(rf'result\{s_date}.csv', encoding='utf-8', sep='\t')
 
 
 if __name__ == '__main__':
