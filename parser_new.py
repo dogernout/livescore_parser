@@ -13,6 +13,7 @@ import json
 from termcolor import colored
 from datetime import datetime, timedelta
 import sys
+from shutil import rmtree
 
 
 class Parser:
@@ -33,7 +34,14 @@ class Parser:
         options.headless = headless
         if os.path.exists(os.getcwd() + r'\drivers\.wdm\drivers.json'):
             with open(os.getcwd() + r'\drivers\.wdm\drivers.json') as f: path = json.load(f)
-            driver = webdriver.Chrome(service=ChromeService(path.popitem()[1]['binary_path']), options=options)
+            try:
+                driver = webdriver.Chrome(service=ChromeService(path.popitem()[1]['binary_path']), options=options)
+            except SessionNotCreatedException:
+                rmtree("drivers", ignore_errors=True)
+                os.mkdir("drivers")
+                driver = webdriver.Chrome(
+                    service=ChromeService(ChromeDriverManager(path=os.getcwd() + r'\drivers').install()),
+                    options=options)
         else:
             driver = webdriver.Chrome(
                 service=ChromeService(ChromeDriverManager(path=os.getcwd() + r'\drivers').install()),
@@ -54,8 +62,7 @@ class Parser:
                     del l_current_teams_coeffs[3:]  # Ошибка у второго букмекера
                     break
             i += 1
-        if len(l_current_teams_coeffs): return True
-        return False
+        return len(l_current_teams_coeffs) > 0
 
     def parse_me_daddy(self):
 
@@ -77,7 +84,7 @@ class Parser:
                 self.parse_me_daddy()
 
         def parse_odd_tab(counter=0):
-            if counter == 50: raise SystemError("Fatal Error")
+            if counter == 50: raise SystemError("exception: Fatal Error")
             try:
                 l_all_home_teams[i].click()
             except ElementClickInterceptedException:
@@ -181,6 +188,7 @@ class Parser:
                 s_name, l_home_scores, l_away_scores, l_results = parse_scores_tab(l_cur_teams[j], j)
                 if s_name is not None: l_info.append([s_name, l_home_scores, l_away_scores, l_results])
             if len(l_info) == 3:
+                print(f"l_info: {l_info}")
                 self.write_excel(l_info[0], l_info[1], 0)
                 self.write_excel(l_info[0], l_info[2], 1)
 #                print(f"{colored('writing', 'green')} info about {team1_name} VS {team2_name} match")
