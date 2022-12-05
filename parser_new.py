@@ -14,6 +14,7 @@ from termcolor import colored
 from datetime import datetime, timedelta
 import sys
 from shutil import rmtree
+import pandas as pd
 
 
 class Parser:
@@ -26,6 +27,9 @@ class Parser:
         self.driver = self.get_driver(headless)
         self.date_counter = date_to_parse
         self.xl, self.wb, self.sheet = None, None, None
+        self.df = pd.DataFrame(columns=['country', 'coef_W', 'coef_D', 'coef_L', 'team1', 'stat_home1', 'stat_away1',
+                          'res_team1', 'team2', 'stat_home2', 'stat_away2', 'res_team2', 'res_home',
+                          'res_away', 'stat_res'])
 
     @staticmethod
     def get_driver(headless):
@@ -68,7 +72,7 @@ class Parser:
 
         def click_cookie(counter=0):
             if counter == 3:
-                raise SystemError("Не удалось нажать на кнопку с принятием куки")
+                raise SystemError("exception: Не удалось нажать на кнопку с принятием куки")
             try:
                 self.driver.find_element(By.ID, "onetrust-accept-btn-handler").click()
             except NoSuchElementException:
@@ -76,7 +80,7 @@ class Parser:
                 click_cookie(counter + 1)
 
         def click_tomorrow():
-            if self.CLICKER == 3: raise SystemError("Не удалось нажать на кнопку открытия нужного дня")
+            if self.CLICKER == 3: raise SystemError("exception: Не удалось нажать на кнопку открытия нужного дня")
             try:
                 self.driver.find_element(By.CLASS_NAME, 'calendar__navigation--tomorrow').click()
             except NoSuchElementException or ElementNotInteractableException:
@@ -94,9 +98,6 @@ class Parser:
             except ElementNotInteractableException:  # FIX THIS SHEEEIDT
                 print("exception: ElementNotInteractableException", flush=True)
                 parse_odd_tab(counter+1)
-            else:
-                #print(f"Processed: {colored(str(int(i / len(l_all_home_teams) * 100)) + '%', 'yellow')}")
-                pass
             sleep(1)
             if len(self.driver.window_handles) == 1:
                 print("strange thing..", flush=True)
@@ -110,14 +111,11 @@ class Parser:
                                       for n in range(len(l_current_teams_coeffs))]
             s_status = self.driver.find_element(By.CLASS_NAME, 'detailScore__status').text
             if not self.check_coefficients(l_current_teams_coeffs):
-                #print(f"{colored('Skipping', 'red')} {team1_name} VS {team2_name} match because of odds issues..")
                 print(f"skipping {team1_name} VS {team2_name} match because of odds issues..", flush=True)
                 self.driver.close()
                 self.driver.switch_to.window(main_tab)
                 return None, None, None, None
             if 'TKP' in s_status or 'Отменен' in s_status or 'Перенесен' in s_status:
-                #  print(
-                #   f"{colored('Skipping', 'red')} {team1_name} VS {team2_name} match because of ТКР/Отменен/Перенесен")
                 print(f"skipping {team1_name} VS {team2_name} match because of ТКР/Отменен/Перенесен..", flush=True)
                 self.driver.close()
                 self.driver.switch_to.window(main_tab)
@@ -131,7 +129,6 @@ class Parser:
         def parse_scores_tab(sel_tab, team):
 
             def check_scores():
-                print(l_home_scores, l_away_scores, l_results, sep="\n")
                 if len(l_home_scores) != 10 or len(l_away_scores) != 10 or len(l_results) != 10: return False
                 for ind in range(10):
                     if not l_home_scores[ind].isdigit() or not l_away_scores[ind].isdigit(): return False
@@ -144,7 +141,6 @@ class Parser:
                              if m.text != '-']
             l_away_scores = [m.text for m in self.driver.find_elements(By.CSS_SELECTOR, '.event__score--away')
                              if m.text != '-']
-            #l_results = [m.text for m in self.driver.find_elements(By.CLASS_NAME, 'wld') if m.text in 'ВНП']
             l_results = [m.text for m in self.driver.find_elements(By.CLASS_NAME, 'formIcon') if m.text in 'ВНП']
             self.driver.close()
             self.driver.switch_to.window(main_tab)
@@ -164,10 +160,8 @@ class Parser:
         print(f'all_len {len(l_all_home_teams)}')#, flush=True)
         i = 0
         while i < len(l_all_home_teams):
-        #while i < 3:
             l_info = []
             print(f'current {i}')#, flush=True)
-            status = int(i / len(l_all_home_teams) * 100)
             try:
                 team1_name = l_all_home_teams[i].text
                 team2_name = l_all_away_teams[i].text
@@ -175,7 +169,6 @@ class Parser:
                 print(f"exception in opening coefficients tab. Index: {i}. Description: {e}")#, flush=True)
                 continue
             if '(Ж)' in team1_name or '(Ж)' in team2_name:
-                #print(f"{colored('Skipping', 'red')} {team1_name} VS {team2_name} match because of female teams..")
                 print(f"skipping {team1_name} VS {team2_name} match because of female teams..")#, flush=True)
                 i += 1
                 continue
@@ -189,56 +182,26 @@ class Parser:
                 if s_name is not None: l_info.append([s_name, l_home_scores, l_away_scores, l_results])
             if len(l_info) == 3:
                 print(f"l_info: {l_info}")
-                self.write_excel(l_info[0], l_info[1], 0)
-                self.write_excel(l_info[0], l_info[2], 1)
-#                print(f"{colored('writing', 'green')} info about {team1_name} VS {team2_name} match")
+                self.df = self.df.append({'country': s_country, 'coef_W': l_current_teams_coeffs[0][1],
+                                          'coef_D': l_current_teams_coeffs[1][1],
+                                          'coef_L': l_current_teams_coeffs[2][1], 'team1': l_info[1][0],
+                                          'stat_home1': l_info[1][1], 'stat_away1': l_info[1][2],
+                                          'res_team1': l_info[1][3], 'team2': l_info[2][0], 'stat_home2': l_info[2][1],
+                                          'stat_away2': l_info[2][2], 'res_team2': l_info[2][3], 'res_home': None,
+                                          'res_away': None, 'stat_res': None}, ignore_index=True)
                 print(f"writing info about {team1_name} VS {team2_name} match")
-                #sys.stdout.write(f"222writing info about {team1_name} VS {team2_name} match")
             else:
-#                print(f"{colored('skipping', 'red')} {team1_name} VS {team2_name} match because of not "
-#                      f"enough matches (< 10)..")
-                print(f"skipping {team1_name} VS {team2_name} match because of not enough matches (<10)..")#, flush=True)
+                print(f"skipping {team1_name} VS {team2_name} match because of not enough matches (<10)..")
             i += 1
+        #self.driver.quit()
+        #self.df.to_csv(r'/data/test.csv', encoding='utf-8')
+        self.quitter()
+        print('all done')
+
+    def quitter(self):
         self.driver.quit()
-        #print(f"{colored('All done!', 'green')}")
-        print('all done')#, flush=True)
-
-    def open_workbook(self):
-        excel_path = os.getcwd() + r'\templates\Шаблон_матчей.xlsm'
-        if os.path.exists(excel_path):
-            self.xl = win.Dispatch('Excel.Application')
-            self.xl.DisplayAlerts = False
-            self.wb = self.xl.Workbooks.open(excel_path)
-            self.sheet = self.wb.Worksheets('List_21')
-
-    def write_excel(self, main_info, team_info, position):
-        if self.sheet is None: return False
-        for i in range(len(team_info[3])):
-            j = team_info[3][i]
-            team_info[3][i] = '0' * (j == 'П') + '1' * (j == 'Н') + '3' * (j == 'В')
-        if not position:
-            self.sheet.cells(self.ROW, 9).value = team_info[0]
-            self.sheet.cells(self.ROW, 4).value = datetime.strftime(
-                datetime.today().date() + timedelta(days=self.date_counter), format="%m-%d-%Y")
-            self.sheet.cells(self.ROW, 25).value = main_info[0]
-            self.sheet.cells(self.ROW + 30, 21).value = main_info[2][0][1]
-            self.sheet.cells(self.ROW + 30, 22).value = main_info[2][1][1]
-            self.sheet.cells(self.ROW + 30, 23).value = main_info[2][2][1]
-        else:
-            self.sheet.cells(self.ROW, 18).value, position = team_info[0], 16
-        for i in range(10):
-            self.sheet.cells(self.ROW + i + 4, 14 + position).value = team_info[1][i]
-            self.sheet.cells(self.ROW + i + 4, 15 + position).value = team_info[2][i]
-            self.sheet.cells(self.ROW + i + 4, 16 + position).value = team_info[3][i]
-        if position: self.ROW += 36
-
-    def close_workbook(self):
-        s_date = datetime.strftime(datetime.today().date() + timedelta(days=self.date_counter), format="%d-%m-%Y")
-        if os.path.exists((os.getcwd() + rf'\data\{s_date}.xlsm')): os.remove(os.getcwd() + rf'\data\{s_date}.xlsm')
-        self.wb.SaveAs(os.getcwd() + rf'\data\{s_date}.xlsm')
-        self.wb.Close()
-        self.xl.Quit()
-        print('end', flush=True)
+        self.df.to_csv('aboba_test.csv', encoding='utf-8')
+        self.df.to_csv('amogus_test.csv', encoding='utf-8', sep='\t')
 
 
 if __name__ == '__main__':
@@ -246,8 +209,7 @@ if __name__ == '__main__':
         aboba = Parser(date_to_parse=int(sys.argv[1]))
     else:
         aboba = Parser()
-    aboba.open_workbook()
     try:
         aboba.parse_me_daddy()
     finally:
-        aboba.close_workbook()
+        aboba.quitter()
