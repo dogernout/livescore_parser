@@ -139,7 +139,13 @@ class Parser:
                     if not l_home_scores[ind].isdigit() or not l_away_scores[ind].isdigit(): return False
                 return True
 
-            self.driver.switch_to.window(self.driver.window_handles[-1])
+            if len(self.driver.window_handles) == 3:
+                self.driver.switch_to.window(self.driver.window_handles[-1])
+                if team1_name not in self.driver.title:
+                    self.driver.switch_to.window(self.driver.window_handles[-2])
+            else:
+                self.driver.switch_to.window(self.driver.window_handles[-1])
+
             sleep(1)
             s_name = self.driver.find_element(By.CLASS_NAME, 'heading__name').text
             l_home_scores = [m.text for m in self.driver.find_elements(By.CSS_SELECTOR, '.event__score--home')
@@ -198,8 +204,6 @@ class Parser:
             else:
                 print(f"skipping {team1_name} VS {team2_name} match because of not enough matches (<10)..")
             i += 1
-        #self.driver.quit()
-        #self.df.to_csv(r'/data/test.csv', encoding='utf-8')
         self.quitter()
         print('all done')
 
