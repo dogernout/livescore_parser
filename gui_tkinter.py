@@ -7,6 +7,7 @@ import parser_new
 import parser_last_day
 import os
 import threading
+from time import sleep
 
 
 def show_window():
@@ -48,8 +49,9 @@ def show_window():
             vsb.pack(side=RIGHT, fill=BOTH)
             lbx_status.config(yscrollcommand=vsb.set)
             window.update()
+
             process = subprocess.Popen(f"py -u parser_new.py {ivar_date.get() + 1} {ivar_settings.get()}", shell=True,
-                                       stdout=subprocess.PIPE, universal_newlines=True)
+                                       stdout=subprocess.PIPE, universal_newlines=True, encoding='utf-8')
             while True:
                 try:
                     output = process.stdout.readline().strip()
@@ -68,9 +70,26 @@ def show_window():
                     lbx_status.insert(0, output)
                     window.update()
                 window.update()
+
             lbl_percent.config(text='All Done')
             prg_bar['value'] = 100
             window.update()
+            lbl_percent.config(text='Now filling data in xlsm..')
+            s_date = datetime.strftime(datetime.today().date() + timedelta(days=ivar_date.get() + 1), format="%d-%m-%Y")
+            process = subprocess.Popen(fr"py -u csv_to_xlsm.py result\{s_date}.csv {ivar_date.get() + 1}", shell=True,
+                                       stdout=subprocess.PIPE, universal_newlines=True, encoding='utf-8')
+            while True:
+                try:
+                    output = process.stdout.readline().strip()
+                except Exception as e:
+                    print('exception:', e)
+                    output = ' '
+                if process.poll() is not None: break
+                lbx_status.insert(0, output)
+                window.update()
+            lbl_percent.config(text='END')
+            window.update()
+
         else:
             s_filename = filedialog.askopenfilename(initialdir=os.getcwd(), title='Choose file to upload',
                                                     filetypes=(('excel files', '*.xls*'),))
