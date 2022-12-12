@@ -84,9 +84,18 @@ def show_window():
                 except Exception as e:
                     print('exception:', e)
                     output = ' '
+                if 'all_len' in output:
+                    i_len = int(output.split()[1])
+                elif 'current' in output:
+                    i_current = int(output.split()[1])
+                    prg_bar['value'] = round((610 * i_current / i_len) / 610 * 100, 2)
+                    lbl_percent.config(text=str(round((610 * i_current / i_len) / 610 * 100, 2)) + '%')
+                else:
+                    lbx_status.insert(0, output)
                 if process.poll() is not None: break
-                lbx_status.insert(0, output)
+
                 window.update()
+            prg_bar['value'] = 100
             lbl_percent.config(text='END')
             window.update()
 
