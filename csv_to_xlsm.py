@@ -28,14 +28,14 @@ class XlBook:
             listz, params = [0] * 6, ['stat_home1', 'stat_home2', 'stat_away1', 'stat_away2', 'res_team1', 'res_team2']
             for ind in range(6):
                 listz[ind] = [jind for jind in self.df[params[ind]][i] if jind.isdigit() or jind in 'ВНП']
-            print(listz)
+            d_result = {'В': 3, 'Н': 1, 'П': 0}
             for j in range(10):
                 self.sheet.Cells(k + j, 14).value = listz[0][j]
                 self.sheet.Cells(k + j, 15).value = listz[2][j]
-                self.sheet.Cells(k + j, 16).value = listz[4][j]
+                self.sheet.Cells(k + j, 16).value = d_result[listz[4][j]]
                 self.sheet.Cells(k + j, 30).value = listz[1][j]
                 self.sheet.Cells(k + j, 31).value = listz[3][j]
-                self.sheet.Cells(k + j, 32).value = listz[5][j]
+                self.sheet.Cells(k + j, 32).value = d_result[listz[5][j]]
             k += 26
             self.sheet.Cells(k, 21).value = self.df['coef_W'][i]
             self.sheet.Cells(k, 22).value = self.df['coef_D'][i]
@@ -43,7 +43,7 @@ class XlBook:
             k += 6
 
     def quitter(self):
-        s_date = datetime.strftime(datetime.today().date() + timedelta(days=self.date_counter), format="%d-%m-%Y")
+        s_date = datetime.strftime(datetime.today().date() - timedelta(days=self.date_counter), format="%d-%m-%Y")
 
         if os.path.exists(rf'data\{s_date}.xlsm'): os.remove(rf'data\{s_date}.xlsm')
         self.wb.SaveAs(os.getcwd() + rf'\data\{s_date}.xlsm')
@@ -53,7 +53,7 @@ class XlBook:
 
 if __name__ == '__main__':
     try:
-        a = XlBook(path_to_csv=r'result\10-12-2022.csv', days_delta=1)
+        a = XlBook(path_to_csv=r'result\10-12-2022.csv', days_delta=2)
         a.write_data()
     finally:
         a.quitter()
