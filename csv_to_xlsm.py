@@ -20,8 +20,10 @@ class XlBook:
 
     def write_data(self):
         k = 7
+        print(f'all_len {self.df.shape[0]}')
         for i in self.df.index:
-            print(i, ':', self.df['team1'][i], '-', self.df['team2'][i])
+            print(f'current {i}')
+            print(i, ':', self.df['team1'][i], '---', self.df['team2'][i])
             self.sheet.Cells(k, 9).value = self.df['team1'][i]
             self.sheet.Cells(k, 18).value = self.df['team2'][i]
             self.sheet.Cells(k, 25).value = self.df['country'][i]
