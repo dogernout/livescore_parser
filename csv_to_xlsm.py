@@ -2,6 +2,7 @@ import win32com.client as win
 import pandas as pd
 from datetime import datetime, timedelta
 import os
+from sys import argv
 
 
 class XlBook:
@@ -43,7 +44,7 @@ class XlBook:
             k += 6
 
     def quitter(self):
-        s_date = datetime.strftime(datetime.today().date() - timedelta(days=self.date_counter), format="%d-%m-%Y")
+        s_date = datetime.strftime(datetime.today().date() + timedelta(days=self.date_counter), format="%d-%m-%Y")
 
         if os.path.exists(rf'data\{s_date}.xlsm'): os.remove(rf'data\{s_date}.xlsm')
         self.wb.SaveAs(os.getcwd() + rf'\data\{s_date}.xlsm')
@@ -52,8 +53,9 @@ class XlBook:
 
 
 if __name__ == '__main__':
-    try:
-        a = XlBook(path_to_csv=r'result\10-12-2022.csv', days_delta=2)
-        a.write_data()
-    finally:
-        a.quitter()
+    if len(argv) > 1:
+        try:
+            a = XlBook(path_to_csv=os.getcwd() + rf'\{argv[1]}', days_delta=int(argv[2]))
+            a.write_data()
+        finally:
+            a.quitter()
